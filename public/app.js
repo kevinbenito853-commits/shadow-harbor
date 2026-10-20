@@ -144,28 +144,6 @@ function buildBoard() {
   const grid = new THREE.GridHelper(Math.max(W, H) + 90, 40, 0x24304d, 0x1b2540);
   grid.position.y = 0.2; grid.scale.set((W + 90) / (Math.max(W, H) + 90), 1, (H + 90) / (Math.max(W, H) + 90)); boardGroup.add(grid);
 
-  // city blocks (decoration only), kept clear of stations and streets
-  const nodes3 = MAPD.nodes.map(P3);
-  const segs = MAPD.edges.map(e => [nodes3[e.a - 1], nodes3[e.b - 1]]);
-  let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  const blocks = [];
-  for (let i = 0; i < 2200 && blocks.length < 230; i++) {
-    const p = new THREE.Vector3((rnd() - 0.5) * (W + 40), 0, (rnd() - 0.5) * (H + 40));
-    const w = 10 + rnd() * 16, d = 10 + rnd() * 16, reach = Math.max(w, d) * 0.75 + 4;
-    if (nodes3.some(n => n.distanceTo(p) < reach + 20)) continue;
-    if (segs.some(([a, b]) => segDist(p, a, b) < reach + 4)) continue;
-    if (blocks.some(q => Math.hypot(q.p.x - p.x, q.p.z - p.z) < (q.r + reach))) continue;
-    blocks.push({ p, w, d, h: 5 + Math.pow(rnd(), 2) * 38, r: reach });
-  }
-  const inst = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ roughness: 0.8, metalness: 0.05 }), blocks.length);
-  const tmp = new THREE.Object3D(), col = new THREE.Color();
-  blocks.forEach((b, i) => {
-    tmp.position.set(b.p.x, b.h / 2, b.p.z); tmp.scale.set(b.w, b.h, b.d); tmp.rotation.y = rnd() * 0.3; tmp.updateMatrix();
-    inst.setMatrixAt(i, tmp.matrix);
-    inst.setColorAt(i, col.setHSL(0.6 + rnd() * 0.06, 0.25, 0.14 + rnd() * 0.12));
-  });
-  boardGroup.add(inst);
-
   // routes
   const order = { ferry: 0, tram: 1, bus: 2, walk: 3 };
   [...MAPD.edges].sort((a, b) => order[a.t] - order[b.t]).forEach(e => {
