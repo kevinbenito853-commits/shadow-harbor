@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 const $ = id => document.getElementById(id);
 const TCOLOR = { walk: '#7f8aa6', bus: '#e8a33d', tram: '#3fbfae', ferry: '#6aa7ff', secret: '#c9a8ff' };
@@ -206,6 +207,12 @@ function buildBoard() {
 // ---------- camera (fixed: the whole map is always in view) ----------
 // Steep tilt so it reads as a top-down map but buildings and tokens still show depth.
 // On a tall (portrait) screen the board is turned 90° so its long side runs up the screen.
+// Zoom (wheel / pinch) and pan (drag) only; the tilt stays fixed.
+const controls = new OrbitControls(camera, canvas);
+controls.enableRotate = false;
+controls.screenSpacePanning = true;
+controls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
+controls.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN };
 function placeCamera() {
   if (!MAPD) return;
   const portrait = camera.aspect < 1 && MAPD.width > MAPD.height;
@@ -215,6 +222,9 @@ function placeCamera() {
   const dir = portrait ? new THREE.Vector3(-0.42, 0.9, 0) : new THREE.Vector3(0, 0.9, 0.42);
   camera.position.copy(dir.normalize().multiplyScalar(dist));
   camera.lookAt(0, 0, 0);
+  controls.target.set(0, 0, 0);
+  controls.minDistance = dist * 0.2; controls.maxDistance = dist * 1.3;
+  controls.update();
 }
 
 function onResize() {
