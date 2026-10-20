@@ -1,0 +1,19 @@
+{
+  "name": "shadow-harbor",
+  "version": "1.0.0",
+  "description": "Shadow Harbor - online hidden-movement chase game",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "three": "^0.170.0",
+    "ws": "^8.22.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
