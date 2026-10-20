@@ -403,8 +403,8 @@ function render() {
   // banner + role
   const b = $('banner'); b.className = 'banner';
   if (S.phase === 'over') {
-    const won = (S.winner === 'shadow') === (m.role === 'shadow');
-    b.innerHTML = `${S.winner === 'shadow' ? 'The Shadow escapes!' : 'Detectives win!'}<small>${won ? 'You won — ' : ''}tap for results</small>`;
+    const won = S.winner !== 'ended' && (S.winner === 'shadow') === (m.role === 'shadow');
+    b.innerHTML = `${S.winner === 'ended' ? 'Game finished' : S.winner === 'shadow' ? 'The Shadow escapes!' : 'Detectives win!'}<small>${won ? 'You won — ' : ''}tap for results</small>`;
   } else if (myTurn()) {
     b.classList.add('me');
     b.innerHTML = `Your move${pending ? ' (2nd of double)' : ''}<small>Tap a glowing station</small>`;
@@ -413,6 +413,7 @@ function render() {
     b.innerHTML = `Waiting for ${esc(who ? who.name : '…')}<small>${nextRevealText()}</small>`;
   }
   b.onclick = () => { if (S.phase === 'over') showResults(true); };
+  $('btnFinish').style.display = S.phase === 'playing' ? '' : 'none';
   const rl = $('role'); rl.className = 'role ' + m.role;
   rl.textContent = m.role === 'shadow' ? '🌑 Shadow' : '🔍 Detective';
 
@@ -457,15 +458,17 @@ function renderSheet() {
 }
 function toggleSheet(on) { sheetOpen = on; $('sheet').classList.toggle('on', on); if (on && S) renderSheet(); }
 $('btnLog').onclick = () => toggleSheet(true);
+$('btnFinish').onclick = () => { if (confirm('Finish the game now for everyone?')) sendMsg({ type: 'finish' }); };
 $('sheet').onclick = e => { if (e.target === $('sheet')) toggleSheet(false); };
 
 function showResults() {
   const m = me(), host = S.hostId === S.youId;
   const shadow = S.players.find(p => p.role === 'shadow');
-  const won = (S.winner === 'shadow') === (m.role === 'shadow');
-  $('modalBox').innerHTML = `<div class="win">${S.winner === 'shadow' ? '🌑 The Shadow escapes!' : '🔍 Detectives win!'}</div>
+  const ended = S.winner === 'ended';
+  const won = !ended && (S.winner === 'shadow') === (m.role === 'shadow');
+  $('modalBox').innerHTML = `<div class="win">${ended ? 'Game finished' : S.winner === 'shadow' ? '🌑 The Shadow escapes!' : '🔍 Detectives win!'}</div>
     <div class="sub" style="text-align:center">${esc(S.reason)}</div>
-    <div class="sub" style="text-align:center">The Shadow was <b style="color:#c9a8ff">${esc(shadow.name)}</b>. ${won ? 'Nice work — you won!' : 'Better luck next time!'}</div>
+    <div class="sub" style="text-align:center">The Shadow was <b style="color:#c9a8ff">${esc(shadow.name)}</b>.${ended ? '' : won ? ' Nice work — you won!' : ' Better luck next time!'}</div>
     <div class="sub" style="text-align:center">The purple trail on the map shows where they went.</div>
     ${host ? '<button class="btn gold" id="again">Play again</button>' : '<div class="sub" style="text-align:center">Waiting for the host to start a rematch…</div>'}
     <button class="btn ghost" id="viewmap">View the map</button>`;

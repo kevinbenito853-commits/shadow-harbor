@@ -314,6 +314,10 @@ wss.on('connection', ws => {
         if (room.phase !== 'playing' || room.turnId !== me.id) return err("It's not your turn.");
         const e = me.role === 'shadow' ? handleShadowMove(room, me, m.moves) : handleDetMove(room, me, m.to);
         if (e) err(e); else if (room.phase === 'playing') { /* broadcast already sent by flow */ }
+      } else if (m.type === 'finish') {
+        if (room.phase !== 'playing') return;
+        clearTimeout(room.botTimer); room.botTimer = null;
+        endGame(room, 'ended', `${me.name} finished the game early.`);
       } else if (m.type === 'again') {
         if (me.id !== room.hostId || room.phase !== 'over') return;
         room.phase = 'lobby'; room.players.forEach(p => { p.role = null; p.pos = null; p.tickets = null; });
