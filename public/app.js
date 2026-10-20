@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 const $ = id => document.getElementById(id);
 const TCOLOR = { walk: '#7f8aa6', bus: '#e8a33d', tram: '#3fbfae', ferry: '#6aa7ff', secret: '#c9a8ff' };
@@ -77,12 +76,7 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b101d);
-scene.fog = new THREE.Fog(0x0b101d, 1500, 3200);
 const camera = new THREE.PerspectiveCamera(45, 1, 5, 6000);
-const controls = new OrbitControls(camera, canvas);
-controls.enableDamping = true; controls.dampingFactor = 0.12;
-controls.maxPolarAngle = Math.PI * 0.46; controls.minDistance = 90; controls.maxDistance = 1700;
-controls.screenSpacePanning = false;
 scene.add(new THREE.HemisphereLight(0xb5ccff, 0x1a2238, 1.0));
 const sun = new THREE.DirectionalLight(0xffffff, 1.5);
 sun.position.set(-350, 650, 250); scene.add(sun);
@@ -206,45 +200,28 @@ function buildBoard() {
     const pick = new THREE.Mesh(pickGeo, pickMat); pick.position.set(p.x, 2, p.z); pick.userData.id = n.id;
     boardGroup.add(pick); pickables.push(pick);
   });
-  resetView();
+  placeCamera();
 }
 
-// ---------- camera ----------
-let goal = null;
-controls.addEventListener('start', () => { goal = null; });
-function fitDistance() {
-  const aspect = camera.aspect || 1, t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-  const dH = (MAPD ? MAPD.height : 700) * 0.62 / t, dW = (MAPD ? MAPD.width : 1000) * 0.56 / (t * aspect);
-  return Math.max(dH, dW, 400);
+// ---------- camera (fixed: the whole map is always in view) ----------
+// Steep tilt so it reads as a top-down map but buildings and tokens still show depth.
+// On a tall (portrait) screen the board is turned 90° so its long side runs up the screen.
+function placeCamera() {
+  if (!MAPD) return;
+  const portrait = camera.aspect < 1 && MAPD.width > MAPD.height;
+  const sw = portrait ? MAPD.height : MAPD.width, sh = portrait ? MAPD.width : MAPD.height;
+  const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const dist = Math.max(sh * 0.66 / t, sw * 0.58 / (t * camera.aspect));
+  const dir = portrait ? new THREE.Vector3(-0.42, 0.9, 0) : new THREE.Vector3(0, 0.9, 0.42);
+  camera.position.copy(dir.normalize().multiplyScalar(dist));
+  camera.lookAt(0, 0, 0);
 }
-const VIEW_DIR = new THREE.Vector3(0, 0.82, 0.58).normalize();
-function flyTo(target, dist, snap) {
-  const dir = snap ? VIEW_DIR.clone() : camera.position.clone().sub(controls.target).normalize();
-  if (dir.y < 0.35) dir.copy(VIEW_DIR);
-  goal = { target: target.clone(), pos: target.clone().addScaledVector(dir, dist) };
-  if (snap) { controls.target.copy(goal.target); camera.position.copy(goal.pos); goal = null; controls.update(); }
-}
-function resetView() { flyTo(new THREE.Vector3(0, 0, 0), fitDistance(), true); }
-function focusMe() {
-  const m = S && S.players.find(p => p.id === S.youId);
-  if (!m || !m.pos || !MAPD) return resetView();
-  flyTo(P3(MAPD.nodes[m.pos - 1]), Math.min(fitDistance(), 520));
-}
-function zoomBy(f) {
-  const off = camera.position.clone().sub(controls.target);
-  const d = THREE.MathUtils.clamp(off.length() * f, controls.minDistance, controls.maxDistance);
-  flyTo(controls.target, d);
-}
-$('zIn').onclick = () => zoomBy(1 / 1.45);
-$('zOut').onclick = () => zoomBy(1.45);
-$('zMe').onclick = () => focusMe();
-$('zFit').onclick = () => flyTo(new THREE.Vector3(0, 0, 0), fitDistance());
 
 function onResize() {
   const w = wrap.clientWidth, h = wrap.clientHeight;
   if (!w || !h) return;
   renderer.setSize(w, h, false);
-  camera.aspect = w / h; camera.updateProjectionMatrix();
+  camera.aspect = w / h; camera.updateProjectionMatrix(); placeCamera();
 }
 new ResizeObserver(onResize).observe(wrap);
 window.addEventListener('resize', onResize);
@@ -356,11 +333,6 @@ const clock = new THREE.Clock();
   });
   const o = 0.55 + Math.sin(t * 5) * 0.4;
   pulses.forEach((m, i) => { m.opacity = i % 2 ? o * 0.5 : o; });
-  if (goal) {
-    controls.target.lerp(goal.target, 0.12); camera.position.lerp(goal.pos, 0.12);
-    if (camera.position.distanceTo(goal.pos) < 1 && controls.target.distanceTo(goal.target) < 1) goal = null;
-  }
-  controls.update();
   renderer.render(scene, camera);
 })();
 
@@ -421,11 +393,10 @@ function render() {
   const first = !$('game').classList.contains('on');
   if (first) show('game');
   const m = me();
-  if (first || S.moveCount === 0 && lastTurnId === null) { resetView(); focusMe(); }
+  $('game').classList.toggle('fs', myTurn());
   if (!myTurn()) { doubleArmed = false; pending = null; }
   if (myTurn() && lastTurnId !== S.youId) {
     if (navigator.vibrate) navigator.vibrate(120);
-    if (!first) focusMe();
   }
   lastTurnId = S.turnId;
 

@@ -58,9 +58,10 @@
     radial-gradient(circle at 50% 40%, #16203a 0%, #0b101d 100%); }
   #map { width: 100%; height: 100%; display: block; user-select: none; -webkit-user-select: none; touch-action: none; outline: none; }
   .plist .rm { margin-left: 8px; background: transparent; border: 1px solid var(--line); border-radius: 8px; width: 30px; height: 30px; color: var(--muted); }
-  .hint3d { position: absolute; left: 10px; bottom: 10px; font-size: 12px; color: var(--muted); background: rgba(23,30,48,.8); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; pointer-events: none; }
-  .zoomctl { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 8px; }
-  .zoomctl button { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: rgba(23,30,48,.92); font-size: 22px; font-weight: 700; }
+  /* your turn: map fills the screen, panels float over it */
+  #game.fs .top { position: absolute; top: 8px; left: 8px; right: 8px; z-index: 5; border: 1px solid var(--line); border-radius: 14px; background: rgba(23,30,48,.82); }
+  #game.fs .bar { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 5; border: 1px solid var(--line); border-radius: 14px; background: rgba(23,30,48,.82); }
+  #game.fs .bar.legend { display: none; }
   .bar { background: var(--panel); border-top: 1px solid var(--line); padding: 8px 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 11px; border-radius: 10px; background: var(--panel2); border: 1px solid var(--line); font-weight: 700; font-size: 14px; }
   .chip i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
@@ -115,7 +116,7 @@
         <li>The Shadow's ticket type is shown after each move, but their location is only revealed on moves 3, 8, 13, 18 and 24.</li>
         <li>The Shadow has <b>Secret</b> tickets (hide the transport, and unlock ferries) and 2 <b>Double Moves</b>.</li>
         <li>Not enough people? The host can add <b>computer players</b> in the lobby (up to 6 players in total).</li>
-        <li>Drag the 3D board to rotate it, pinch or scroll to zoom, and tap a glowing station to move.</li>
+        <li>The whole board is always in view. On your turn the map fills the screen — tap a glowing station to move.</li>
         <li>Detectives win by landing on the Shadow's station. The Shadow wins by lasting all 24 moves.</li>
       </ul>
     </details>
@@ -144,13 +145,7 @@
     <button class="iconbtn" id="btnLog">Log</button>
   </div>
   <div id="mapwrap"><canvas id="map"></canvas>
-    <div class="hint3d">Drag to rotate · pinch/scroll to zoom · two fingers to pan</div>
-    <div class="zoomctl">
-      <button id="zIn" aria-label="Zoom in">+</button>
-      <button id="zOut" aria-label="Zoom out">−</button>
-      <button id="zMe" aria-label="Centre on me">⌖</button>
-      <button id="zFit" aria-label="Show whole map">⤢</button>
-    </div></div>
+  </div>
   <div class="bar" id="bar"></div>
   <div class="bar legend" style="border-top:0;padding-top:0">
     <span style="--c:var(--walk)">Walk</span><span style="--c:var(--bus)">Bus</span>
